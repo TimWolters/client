@@ -46,12 +46,13 @@ class ReplaysWidget(BaseClass, FormClass):
         self.onlineTree.setItemDelegate(ReplayItemDelegate(self))
         self.replayDownload = QNetworkAccessManager()
         self.replayDownload.finished.connect(self.finishRequest)
-        
+        self.spoilerCheckbox.stateChanged.connect(self.spoilerCheckboxPressed)
+
         # sending request to replay vault
         self.searchButton.pressed.connect(self.searchVault)
         self.playerName.returnPressed.connect(self.searchVault)
         self.mapName.returnPressed.connect(self.searchVault)
-        
+
         self.myTree.itemDoubleClicked.connect(self.myTreeDoubleClicked)
         self.myTree.itemPressed.connect(self.myTreePressed)
         self.myTree.header().setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
@@ -64,7 +65,7 @@ class ReplaysWidget(BaseClass, FormClass):
         self.liveTree.header().setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
         self.liveTree.header().setResizeMode(1, QtGui.QHeaderView.Stretch)
         self.liveTree.header().setResizeMode(2, QtGui.QHeaderView.ResizeToContents)
-        
+
         self.games = {}
         
         self.onlineTree.itemDoubleClicked.connect(self.onlineTreeDoubleClicked)
@@ -79,10 +80,14 @@ class ReplaysWidget(BaseClass, FormClass):
         self.replayVaultSocket.disconnected.connect(self.disconnected)
         self.replayVaultSocket.error.connect(self.errored) 
 
-        
         logger.info("Replays Widget instantiated.")
 
-        
+    def spoilerCheckboxPressed(self, item):
+        print str(vars(self.replayInfos))
+        print str([method for method in dir(self.replayInfos) if callable(self.replayInfos)])
+        print str(dir(self.onlineReplays))
+        # print str(item)
+
     def searchVault(self):
         ''' search for some replays '''
         self.searching = True
@@ -109,7 +114,7 @@ class ReplaysWidget(BaseClass, FormClass):
 
     def onlineTreeClicked(self, item):
         if QtGui.QApplication.mouseButtons() == QtCore.Qt.RightButton :
-            item.pressed(item)           
+            item.pressed(item)
         else :
             if hasattr(item, "moreInfo") :
                 if item.moreInfo == False :
@@ -117,7 +122,7 @@ class ReplaysWidget(BaseClass, FormClass):
                     self.send(dict(command="info_replay", uid = item.uid))
                 else :
                     self.replayInfos.clear()
-                    self.replayInfos.setHtml(item.replayInfo)
+                    item.generateInfoPlayersHTML()
                 
     def onlineTreeDoubleClicked(self, item):
         if hasattr(item, "url") :

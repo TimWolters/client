@@ -15,6 +15,7 @@ class ReplayItemDelegate(QtGui.QStyledItemDelegate):
     
     def __init__(self, *args, **kwargs):
         QtGui.QStyledItemDelegate.__init__(self, *args, **kwargs)
+
         
     def paint(self, painter, option, index, *args, **kwargs):
         self.initStyleOption(option, index)
@@ -52,7 +53,7 @@ class ReplayItemDelegate(QtGui.QStyledItemDelegate):
         html.drawContents(painter, clip)
   
         painter.restore()
-        
+
 
     def sizeHint(self, option, index, *args, **kwargs):
         clip = index.model().data(index, QtCore.Qt.UserRole)
@@ -77,7 +78,6 @@ class ReplayItem(QtGui.QTreeWidgetItem):
     def __init__(self, uid, parent, *args, **kwargs):
         QtGui.QTreeWidgetItem.__init__(self, *args, **kwargs)
 
-        
         self.uid            = uid
         self.parent         = parent
         self.height         = 70
@@ -102,10 +102,14 @@ class ReplayItem(QtGui.QTreeWidgetItem):
 
         self.options        = []
         self.players        = []
+
+        self.spoilerCB= self.parent.spoilerCheckbox
         
         self.setHidden(True)
 
-    
+    def spoilerCheckboxPressed(self, item):
+        self.generateInfoPlayersHTML()
+
     def update(self, message, client):
         '''
         Updates this item from the message dictionary supplied
@@ -167,13 +171,17 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                 else :
                     self.teams[team].append(player)
 
-        teamWin = None
+        self.teamWin = None
         if len(scores) > 0 :
             winner = 0
             for team in scores :
                 if scores[team] > winner :
-                    teamWin = team
+                    self.teamWin = team
+
+        self.generateInfoPlayersHTML()
                 
+
+    def generateInfoPlayersHTML(self):
         observerlist    = []
         teamlist        = []
 
@@ -186,21 +194,20 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                 teamtxt = "<table border=0 width = 100% height = 100%>"
 
                 teamDisplay    = []
-                if teamWin and self.parent.spoilerCheckbox.isChecked() == False :
-                    if teamWin == i :
+                if self.teamWin and self.spoilerCB.isChecked() == False :
+                    if self.teamWin == i :
                         teamDisplay.append("<table border=0 width = 100% height = 100%><tr><td align = 'center' valign='center' width =100%><font size ='+2'>WIN</font></td></tr></table>")
                     else :
                         teamDisplay.append("<table border=0 width = 100% height = 100%><tr><td align = 'center' valign='center' width =100%><font size ='+2'>LOSE</font></td></tr></table>")
                 for player in self.teams[team] :
                     displayPlayer = ""
 
-    
+
                     playerStr = player["name"]
-                    
+
                     if "rating" in player :
                         playerStr += " ("+str(int(player["rating"]))+")"
-                    
-                    if "after_rating" in player and self.parent.spoilerCheckbox.isChecked() == False :
+                    if "after_rating" in player and self.spoilerCB.isChecked() == False :
                         playerStr += " to ("+str(int(player["after_rating"]))+")"
 
 
@@ -210,7 +217,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                         displayPlayer = ("<td align = 'right' valign='center' width=150>%s</td>" % playerStr)
                     else :
                         displayPlayer = ("<td align = 'center' valign='center' width=150>%s</td>" % playerStr)
-                    
+
 
                     if "faction" in player :
                         if player["faction"] == 1 :
@@ -220,15 +227,15 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                         elif player["faction"] == 3 :
                             faction = "Cybran"
                         elif player["faction"] == 4 :
-                            faction = "Seraphim"                            
+                            faction = "Seraphim"
                         elif player["faction"] == 5 :
-                            faction = "Nomads"     
+                            faction = "Nomads"
                         else :
                             faction = "Broken"
-                            
+
                         url = os.path.join(util.COMMON_DIR, "replays/%s.png" % faction)
- 
-                        if i == len(self.teams) : 
+
+                        if i == len(self.teams) :
                             displayPlayer += '<td width="40"><img src = "'+url+'" width="40" height="20"></td>'
                         else :
                             displayPlayer = '<td width="40"><img src = "'+url+'" width="40" height="20"></td>' + displayPlayer
@@ -236,13 +243,13 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                     display = ("<tr>%s</tr>" % displayPlayer)
 
                     teamDisplay.append(display)
-                        
+
                 members = "".join(teamDisplay)
-                
+
                 teamlist.append("<td>" + teamtxt + members + "</table></td>")
-                
-                    
-                
+
+
+
             else :
                 observerlist.append(",".join(self.teams[team]))
 
@@ -252,15 +259,15 @@ class ReplayItem(QtGui.QTreeWidgetItem):
         observers = ""
         if len(observerlist) != 0 :
             observers = "Observers : "
-            observers += ",".join(observerlist)    
+            observers += ",".join(observerlist)
 
         #self.setToolTip(teams)
-        self.replayInfo = ('<h2>Replay UID : %i</h2></br></br><table border="0" cellpadding="0" cellspacing="5"><tbody><tr>%s</tr></tbody></table>') % (self.uid, teams)
-        
-        
+        replayInfo = ('<h2>Replay UID : %i</h2></br></br><table border="0" cellpadding="0" cellspacing="5"><tbody><tr>%s</tr></tbody></table>') % (self.uid, teams)
+
+
         if self.isSelected() :
             self.parent.replayInfos.clear()
-            self.parent.replayInfos.setHtml(self.replayInfo)
+            self.parent.replayInfos.setHtml(replayInfo)
 
 
     def pressed(self, item):
