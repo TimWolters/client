@@ -70,6 +70,7 @@ class ReplaysWidget(BaseClass, FormClass):
         
         self.onlineTree.itemDoubleClicked.connect(self.onlineTreeDoubleClicked)
         self.onlineTree.itemPressed.connect(self.onlineTreeClicked)
+        self.selectedReplay = False
         
         # replay vault connection to server
         self.searching = False
@@ -83,10 +84,8 @@ class ReplaysWidget(BaseClass, FormClass):
         logger.info("Replays Widget instantiated.")
 
     def spoilerCheckboxPressed(self, item):
-        print str(vars(self.replayInfos))
-        print str([method for method in dir(self.replayInfos) if callable(self.replayInfos)])
-        print str(dir(self.onlineReplays))
-        # print str(item)
+        if(self.selectedReplay):
+            self.selectedReplay.generateInfoPlayersHtml()
 
     def searchVault(self):
         ''' search for some replays '''
@@ -116,13 +115,17 @@ class ReplaysWidget(BaseClass, FormClass):
         if QtGui.QApplication.mouseButtons() == QtCore.Qt.RightButton :
             item.pressed(item)
         else :
+            self.selectedReplay = item
             if hasattr(item, "moreInfo") :
                 if item.moreInfo == False :
                     self.connectToModVault()
                     self.send(dict(command="info_replay", uid = item.uid))
+                elif item.spoiled != self.spoilerCheckbox.isChecked():
+                    self.replayInfos.clear()
+                    self.replayInfos.setHtml(item.replayInfo)
                 else :
                     self.replayInfos.clear()
-                    item.generateInfoPlayersHTML()
+                    item.generateInfoPlayersHtml()
                 
     def onlineTreeDoubleClicked(self, item):
         if hasattr(item, "url") :

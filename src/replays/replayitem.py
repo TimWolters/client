@@ -92,6 +92,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
         self.duration       = None
         
         self.moreInfo       = False
+        self.spoiled      = False
         self.replayInfo     = False
         self.url            = "http://content.faforever.com/faf/vault/replay_vault/replay.php?id=%i" % self.uid
         
@@ -106,9 +107,6 @@ class ReplayItem(QtGui.QTreeWidgetItem):
         self.spoilerCB= self.parent.spoilerCheckbox
         
         self.setHidden(True)
-
-    def spoilerCheckboxPressed(self, item):
-        self.generateInfoPlayersHTML()
 
     def update(self, message, client):
         '''
@@ -178,14 +176,15 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                 if scores[team] > winner :
                     self.teamWin = team
 
-        self.generateInfoPlayersHTML()
+        self.generateInfoPlayersHtml()
                 
 
-    def generateInfoPlayersHTML(self):
+    def generateInfoPlayersHtml(self):
         observerlist    = []
         teamlist        = []
 
         teams = ""
+        self.spoiled = self.parent.spoilerCheckbox.isChecked() == False
 
         i = 0
         for team in self.teams:
@@ -194,7 +193,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                 teamtxt = "<table border=0 width = 100% height = 100%>"
 
                 teamDisplay    = []
-                if self.teamWin and self.spoilerCB.isChecked() == False :
+                if self.teamWin and self.spoiled:
                     if self.teamWin == i :
                         teamDisplay.append("<table border=0 width = 100% height = 100%><tr><td align = 'center' valign='center' width =100%><font size ='+2'>WIN</font></td></tr></table>")
                     else :
@@ -207,7 +206,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
 
                     if "rating" in player :
                         playerStr += " ("+str(int(player["rating"]))+")"
-                    if "after_rating" in player and self.spoilerCB.isChecked() == False :
+                    if "after_rating" in player and self.spoiled:
                         playerStr += " to ("+str(int(player["after_rating"]))+")"
 
 
@@ -248,8 +247,6 @@ class ReplayItem(QtGui.QTreeWidgetItem):
 
                 teamlist.append("<td>" + teamtxt + members + "</table></td>")
 
-
-
             else :
                 observerlist.append(",".join(self.teams[team]))
 
@@ -262,12 +259,12 @@ class ReplayItem(QtGui.QTreeWidgetItem):
             observers += ",".join(observerlist)
 
         #self.setToolTip(teams)
-        replayInfo = ('<h2>Replay UID : %i</h2></br></br><table border="0" cellpadding="0" cellspacing="5"><tbody><tr>%s</tr></tbody></table>') % (self.uid, teams)
+        self.replayInfo = ('<h2>Replay UID : %i</h2></br></br><table border="0" cellpadding="0" cellspacing="5"><tbody><tr>%s</tr></tbody></table>') % (self.uid, teams)
 
 
         if self.isSelected() :
             self.parent.replayInfos.clear()
-            self.parent.replayInfos.setHtml(replayInfo)
+            self.parent.replayInfos.setHtml(self.replayInfo)
 
 
     def pressed(self, item):
